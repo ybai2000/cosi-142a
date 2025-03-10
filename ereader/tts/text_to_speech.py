@@ -1,15 +1,18 @@
-import pyttsx3
-
+import gtts
+from gtts import gTTS
+from io import BytesIO
 
 class MyTTS:
-    def __init__(self) -> None:
-        '''
-        Initialize the TTS engine
-        '''
-        self.engine = pyttsx3.init()
-        self.engine.say("Hello, I am your eReader. How can I help you?")
-        self.engine.runAndWait()
+    langs = gtts.lang.tts_langs().keys()
 
+    def __init__(self, lang: str='en') -> None:
+        self.tts = gTTS
+        if (lang not in MyTTS.langs):
+            self.lang = 'en'
+        else:
+            self.lang = lang
+    
+    
 
 if __name__ == "__main__":
     tts = MyTTS()
