@@ -6,10 +6,10 @@ import ujson
 led = machine.Pin("LED", machine.Pin.OUT)
 
 # Define pin constants
-SELECT_PIN = 0
-BACK_PIN = 1
-UP_PIN = 2
-DOWN_PIN = 3
+SELECT_PIN = 16
+BACK_PIN = 18
+UP_PIN = 20
+# DOWN_PIN = 3
 
 # Define pins with pull-up resistors
 select = machine.Pin(SELECT_PIN, machine.Pin.IN, machine.Pin.PULL_UP)
@@ -38,13 +38,14 @@ def pin_triggered(pin):
         sys.stdout.buffer.write(ujson.dumps(signal).encode('utf-8') + b'\n')
         led.toggle()
     except Exception as e:
+        led.value
         sys.stderr.write(f"Error in interrupt handler: {e}\n")
 
 # Attach interrupts to pins
-select.irq(trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING, handler=pin_triggered)
-back.irq(trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING, handler=pin_triggered)
-up.irq(trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING, handler=pin_triggered)
-down.irq(trigger=machine.Pin.IRQ_FALLING | machine.Pin.IRQ_RISING, handler=pin_triggered)
+select.irq(trigger=machine.Pin.IRQ_RISING, handler=pin_triggered)
+back.irq(trigger=machine.Pin.IRQ_RISING, handler=pin_triggered)
+up.irq(trigger=machine.Pin.IRQ_RISING, handler=pin_triggered)
+down.irq(trigger=machine.Pin.IRQ_RISING, handler=pin_triggered)
 
 # Keep the program running
 try:
