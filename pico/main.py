@@ -9,7 +9,7 @@ led = machine.Pin("LED", machine.Pin.OUT)
 SELECT_PIN = 16
 BACK_PIN = 18
 UP_PIN = 20
-# DOWN_PIN = 3
+DOWN_PIN = 3
 
 # Define pins with pull-up resistors
 select = machine.Pin(SELECT_PIN, machine.Pin.IN, machine.Pin.PULL_UP)
@@ -28,7 +28,6 @@ def pin_triggered(pin):
         if utime.ticks_diff(current_time, last_triggered) < 50:  # Debounce for 50ms
             return
         last_triggered = current_time
-
         signal = {
             "select": select.value(),
             "back": back.value(),

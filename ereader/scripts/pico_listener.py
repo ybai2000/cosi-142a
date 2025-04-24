@@ -25,7 +25,7 @@ class Pico_Listener:
                 except Exception as e:
                     print(f"Error reading signal: {e}")
 
-    def listening(self):
+    def start_listening(self):
         listener_thread = threading.Thread(target=self.read_signal)
         listener_thread.daemon = True
         listener_thread.start()
