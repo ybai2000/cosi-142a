@@ -27,11 +27,7 @@ class PicoListener:
             if self.ser.in_waiting > 0:
                 try:
                     message = int(self.ser.readline().decode('utf-8').strip())
-                    for i in self.DICT:
-                        if message.get(i) == 1:  # Use `get` to avoid KeyError
-                            self.queue.put(i)
-                except json.JSONDecodeError as e:
-                    print(f"Error decoding JSON: {e}")
+                    self.queue.put(Button(message))
                 except Exception as e:
                     print(f"Error reading signal: {e}")
 

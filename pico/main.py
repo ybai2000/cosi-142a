@@ -36,10 +36,10 @@ def closure(value):
     return pin_triggered
 
 # Attach interrupts to pins
-select.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(0))
-back.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(1))
-up.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(2))
-down.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(3))
+select.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(1))
+back.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(2))
+up.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(3))
+down.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(4))
 
 # Keep the program running
 try:
