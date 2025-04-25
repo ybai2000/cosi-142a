@@ -1,8 +1,25 @@
-from PIL import Image, ImageDraw,ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
-H_SPACER = 10
-BUTTON_HEIGHT = 50
 MAIN_MENU_CONTROLS = ['up', 'down', 'select']
+
+
+class Display:
+    def __init__(self, width: int, height: int, font: ImageFont, button_height: int, line_space: int) -> None:
+        self.width = width
+        self.height = height
+        self.font = font
+        self.buttons = Image.new("1", (self.width, ), 0)
+
+
+    def draw_page(self, page: list[str]):
+        pass
+
+    def draw_button_labels(self, image: Image.Image, labels: list[str]):
+        draw = ImageDraw.Draw(image)
+        button_label_width = self.width / 4
+        for i, label in enumerate(labels):
+            draw.rectangle((button_label_width * i + H_SPACER, height - BUTTON_HEIGHT,
+                            button_label_width * (i + 1) + H_SPACER, height - H_SPACER), outline=0)
 
 
 def place_sentences(image, sentences, font, x, y, width, height):
@@ -89,11 +106,6 @@ def scroll_menu(width, height, items, items_per_page, font):
 
     return images, pages
 
-def draw_button_labels(image: Image.Image, labels: list[str],width: int, height: int):
-    draw = ImageDraw.Draw(image)
-    button_label_width = (width - H_SPACER * 2) / 4
-    for i in range(4):
-        draw.rectangle((button_label_width * i + H_SPACER,height-BUTTON_HEIGHT,button_label_width * (i +1) + H_SPACER,height-H_SPACER),outline=0)
 
 
 #code is in rough shape but here is some examples of what usage should look like, basically

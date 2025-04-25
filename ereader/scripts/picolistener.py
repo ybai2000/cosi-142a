@@ -1,9 +1,17 @@
+from enum import Enum
 import serial
 import json
 import threading
 import queue
 
-class Pico_Listener:
+
+class Button(Enum):
+    SELECT = 1
+    BACK = 2
+    UP = 3
+    DOWN = 4
+
+class PicoListener:
     def __init__(self):
         self.PORT = "/dev/ttyACM0"
         self.BAUDRATE = 115200
@@ -32,6 +40,12 @@ class Pico_Listener:
 
     def get_signal_queue(self):
         return self.queue
+
+    def check_interrupt(self):
+        try:
+            return self.queue.get_nowait()
+        except queue.Empty:
+            return None
 
     def stop_listening(self):
         self.stop_event.set()  # Signal the thread to stop
