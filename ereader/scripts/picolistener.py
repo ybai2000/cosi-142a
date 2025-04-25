@@ -4,7 +4,6 @@ import json
 import threading
 import queue
 
-
 class Button(Enum):
     SELECT = 1
     BACK = 2
@@ -24,12 +23,8 @@ class PicoListener:
         while not self.stop_event.is_set():  # Check if the thread should stop
             if self.ser.in_waiting > 0:
                 try:
-                    message = json.loads(self.ser.readline().decode('utf-8').strip())
-                    for i in self.DICT:
-                        if message.get(i) == 1:  # Use `get` to avoid KeyError
-                            self.queue.put(i)
-                except json.JSONDecodeError as e:
-                    print(f"Error decoding JSON: {e}")
+                    message = int(self.ser.readline().decode('utf-8').strip())
+                    self.queue.put(Button(message))
                 except Exception as e:
                     print(f"Error reading signal: {e}")
 
