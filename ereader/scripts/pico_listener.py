@@ -1,7 +1,7 @@
-import serial
-import json
 import threading
 import queue
+import serial
+from enum import Enum
 
 class Pico_Listener:
     def __init__(self):
@@ -16,7 +16,7 @@ class Pico_Listener:
         while not self.stop_event.is_set():  # Check if the thread should stop
             if self.ser.in_waiting > 0:
                 try:
-                    message = json.loads(self.ser.readline().decode('utf-8').strip())
+                    message = int(self.ser.readline().decode('utf-8').strip())
                     for i in self.DICT:
                         if message.get(i) == 1:  # Use `get` to avoid KeyError
                             self.queue.put(i)

@@ -6,10 +6,10 @@ import ujson
 led = machine.Pin("LED", machine.Pin.OUT)
 
 # Define pin constants
-SELECT_PIN = 0
-BACK_PIN = 4
-UP_PIN = 8
-DOWN_PIN = 16
+SELECT_PIN = 0  # GP0 et GND
+BACK_PIN = 4    # GP4 et GND
+UP_PIN = 8      # GP8 et GND
+DOWN_PIN = 16   # GP16 et GND
 
 # Define pins with pull-up resistors
 select = machine.Pin(SELECT_PIN, machine.Pin.IN, machine.Pin.PULL_UP)
