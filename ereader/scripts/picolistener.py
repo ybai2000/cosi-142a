@@ -17,7 +17,6 @@ class PicoListener:
     def __init__(self):
         self.PORT = "/dev/ttyACM0"
         self.BAUDRATE = 115200
-        self.DICT = ("select", "back", "up", "down")
         self.ser = serial.Serial(self.PORT, self.BAUDRATE, timeout=1)
         self.queue = queue.Queue()
         self.stop_event = threading.Event()  # Event to stop the thread
