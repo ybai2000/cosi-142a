@@ -5,6 +5,14 @@ BUTTON_HEIGHT = 50
 MAIN_MENU_CONTROLS = ['up', 'down', 'select']
 
 
+class Display:
+    def __init__(self) -> None:
+        pass
+
+    def draw_page(self, page):
+        pass
+
+
 def place_sentences(image, sentences, font, x, y, width, height):
     draw = ImageDraw.Draw(image)
     _, text_y_start, _, text_y_end = draw.textbbox((0, 0), "text", font=font)
