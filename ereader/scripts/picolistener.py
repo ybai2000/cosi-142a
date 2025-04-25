@@ -4,7 +4,7 @@ import threading
 import queue
 from enum import Enum
 
-class Signal(Enum):
+class Button(Enum):
     SELECT = 1
     BACK = 2
     UP = 3
@@ -23,11 +23,11 @@ class PicoListener:
             if self.ser.in_waiting > 0:
                 try:
                     message = int(self.ser.readline().decode('utf-8').strip())
-                    self.queue.put(Signal(message))
+                    self.queue.put(Button(message))
                 except Exception as e:
                     print(f"Error reading signal: {e}")
 
-    def start_listening(self):
+    def listening(self):
         listener_thread = threading.Thread(target=self.read_signal)
         listener_thread.daemon = True
         listener_thread.start()
