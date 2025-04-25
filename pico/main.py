@@ -6,10 +6,10 @@ import ujson
 led = machine.Pin("LED", machine.Pin.OUT)
 
 # Define pin constants
-SELECT_PIN = 16
-BACK_PIN = 18
-UP_PIN = 20
-# DOWN_PIN = 3
+SELECT_PIN = 0  # GP0 et GND
+BACK_PIN = 4    # GP4 et GND
+UP_PIN = 8      # GP8 et GND
+DOWN_PIN = 16   # GP16 et GND
 
 # Define pins with pull-up resistors
 select = machine.Pin(SELECT_PIN, machine.Pin.IN, machine.Pin.PULL_UP)
@@ -21,31 +21,25 @@ down = machine.Pin(DOWN_PIN, machine.Pin.IN, machine.Pin.PULL_UP)
 last_triggered = 0
 
 # Function to handle pin interrupts
-def pin_triggered(pin):
-    try:
-        global last_triggered
-        current_time = utime.ticks_ms()
-        if utime.ticks_diff(current_time, last_triggered) < 50:  # Debounce for 50ms
-            return
-        last_triggered = current_time
-
-        signal = {
-            "select": select.value(),
-            "back": back.value(),
-            "up": up.value(),
-            "down": down.value()
-        }
-        sys.stdout.buffer.write(ujson.dumps(signal).encode('utf-8') + b'\n')
-        led.toggle()
-    except Exception as e:
-        led.value
-        sys.stderr.write(f"Error in interrupt handler: {e}\n")
+def closure(value):
+    def pin_triggered(pin):
+        try:
+            global last_triggered
+            current_time = utime.ticks_ms()
+            if utime.ticks_diff(current_time, last_triggered) < 50:  # Debounce for 50ms
+                return
+            last_triggered = current_time
+            sys.stdout.buffer.write(str(value).encode('utf-8') + b'\n')
+            led.toggle()
+        except Exception as e:
+            sys.stderr.write(f"Error in interrupt handler: {e}\n")
+    return pin_triggered
 
 # Attach interrupts to pins
-select.irq(trigger=machine.Pin.IRQ_RISING, handler=pin_triggered)
-back.irq(trigger=machine.Pin.IRQ_RISING, handler=pin_triggered)
-up.irq(trigger=machine.Pin.IRQ_RISING, handler=pin_triggered)
-down.irq(trigger=machine.Pin.IRQ_RISING, handler=pin_triggered)
+select.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(1))
+back.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(2))
+up.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(3))
+down.irq(trigger=machine.Pin.IRQ_RISING, handler=closure(4))
 
 # Keep the program running
 try:
