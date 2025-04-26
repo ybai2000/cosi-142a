@@ -1,6 +1,82 @@
+from typing import Iterable, Sequence
 from PIL import Image, ImageDraw, ImageFont
 
 MAIN_MENU_CONTROLS = ['up', 'down', 'select']
+
+
+class Page:
+    def __init__(self, width: int, height: int, font: ImageFont, line_space: int) -> None:
+        # tuple is (start_x, start_y, string)
+        self.sentences: list[list[tuple[int, int, str]]] = []
+        self.width = width
+        self.height = height
+        self.font = font
+        self.line_height, descent = font.getmetrics()
+        self.line_space = line_space if line_space >= descent * 2 else descent * 2
+        self.max_lines = self.height // (self.line_height + self.line_space)
+        if self.height % (self.line_height + self.line_space) >= (self.line_height + descent):
+            self.max_lines += 1
+        self.lines = ['']
+        self.image = Image.new("1", (self.width, self.height), 255)
+        self.image_drawn = False
+        self.draw = ImageDraw.Draw(self.image)
+        self.draw.font = self.font
+
+    def draw_page(self) -> Image:
+        self.image_drawn = True
+        for i, line in enumerate(self.lines):
+            self.draw.text((0, i * (self.line_height + self.line_space)), line)
+        return self.image
+
+    def draw_highlight_sentences(self, sentences: Sequence[int]) -> Image:
+        if not self.image_drawn:
+            self.draw_page()
+        segments = []
+        for sentence in sentences:
+            segments.extend(self.sentences[sentence])
+        return Display.highlight_text(self.image, segments, self.font)
+
+    def add_sentence(self, sentence: str) -> str | None:
+        # todo make it split words larger than width? or don't care - pretty sure will be unable to add at all currently
+        start_x = self.draw.textlength(self.sentences[-1][-1][2] + ' ') if self.sentences else 0
+        segment_start_word = 0
+        words = sentence.split(' ')
+        for i, word in enumerate(words):
+            if not self.lines[-1]:
+                new_line = word
+            else:
+                new_line = self.lines[-1] + ' ' + word
+            line_length = self.draw.textlength(new_line)
+            if line_length > self.width or i == len(words) - 1:
+                added_words = ' '.join(words[segment_start_word:i if i < len(words) - 1 else i + 1])
+                if added_words:
+                    if segment_start_word == 0:
+                        self.sentences.append([])
+                    start_y = (len(self.lines) - 1) * (self.line_height + self.line_space)
+                    self.sentences[-1].append((start_x, start_y, added_words))
+            if line_length > self.width:
+                if len(self.lines) == self.max_lines:
+                    return ' '.join(words[i:])
+                segment_start_word = i
+                self.lines.append(word)
+                start_x = 0
+            else:
+                self.lines[-1] = new_line
+
+    @staticmethod
+    def generate_pages(width: int, height: int, font: ImageFont, line_space: int, sentences: Iterable[str]
+                       ) -> list['Page']:
+        pages = [Page(width, height, font, line_space)]
+        for sent in sentences:
+            remainder = pages[-1].add_sentence(sent)
+            while remainder:
+                pages.append(Page(width, height, font, line_space))
+                remainder = pages[-1].add_sentence(remainder)
+        return pages
+
+
+class Menu:
+    pass
 
 
 class Display:
@@ -8,111 +84,63 @@ class Display:
         self.width = width
         self.height = height
         self.font = font
-        self.buttons = Image.new("1", (self.width, ), 0)
+        self.button_height = button_height
+        self.line_space = line_space
+        self.canvas = Image.new("1", (self.width, self.height))
+        self.buttons = Image.new("1", (self.width, self.button_height))
+
+    def paint_canvas(self) -> None:
+        """
+        Displays the canvas on the e-ink screen.
+        """
+        pass  # call function to draw canvas on ink screen
+
+    def draw_screen(self, page: list[str]):
+        screen = Image.new("1", (self.width, self.height - self.button_height))
+        self.canvas.paste(screen, (0, 0))
+
+    # def draw_button_labels(self, image: Image.Image, labels: list[str]):
+    #     draw = ImageDraw.Draw(image)
+    #     button_label_width = self.width / 4
+    #     for i, label in enumerate(labels):
+    #         draw.rectangle((button_label_width * i + H_SPACER, height - BUTTON_HEIGHT,
+    #                         button_label_width * (i + 1) + H_SPACER, height - H_SPACER), outline=0)
+
+    @staticmethod
+    def highlight_text(image: Image, text: list[tuple[int, int, str]], font: ImageFont) -> Image:
+        ascent, descent = font.getmetrics()
+        box_height = ascent + descent
+        highlighted_image = image.copy()
+        draw = ImageDraw.Draw(highlighted_image)
+        for item in text:
+            draw.rectangle((item[0], item[1], item[0] + draw.textlength(item[2], font=font), item[1] + box_height),
+                           fill=0)
+            draw.text((item[0], item[1]), item[2], fill=255, font=font)
+        return highlighted_image
 
 
-    def draw_page(self, page: list[str]):
-        pass
+# def scroll_menu(width, height, items, items_per_page, font):
+#     images = []
+#     pages = []
+#     for i in range(0, len(items), items_per_page):
+#         image = Image.new("1", (width, height), 255)
+#         draw_button_labels(image, MAIN_MENU_CONTROLS, width, height)
+#         draw = ImageDraw.Draw(image)
+#         page_items = items[i:i + items_per_page]
+#         box_height = (height - BUTTON_HEIGHT) / (items_per_page + 2)
+#         first_item = ["Add_new"] if i == 0 else ["Previous page"]
+#         last_item = ["Next page"] if i + items_per_page < len(items) else []
+#         all_items = first_item + page_items + last_item
+#         coordinates = []
+#         for j, item in enumerate(all_items):
+#             draw.rectangle((10, box_height * j, width - 10, box_height * (j + 1)), outline=0)
+#             draw.text((15, box_height * j), item, font=font)
+#             coordinates.append(((10, box_height * j, width - 10, box_height * (j + 1)), item))
+#         pages.append(coordinates)
+#         images.append(image)
+#
+#     return images, pages
 
-    def draw_button_labels(self, image: Image.Image, labels: list[str]):
-        draw = ImageDraw.Draw(image)
-        button_label_width = self.width / 4
-        for i, label in enumerate(labels):
-            draw.rectangle((button_label_width * i + H_SPACER, height - BUTTON_HEIGHT,
-                            button_label_width * (i + 1) + H_SPACER, height - H_SPACER), outline=0)
-
-
-def place_sentences(image, sentences, font, x, y, width, height):
-    draw = ImageDraw.Draw(image)
-    _, text_y_start, _, text_y_end = draw.textbbox((0, 0), "text", font=font)
-    text_height = text_y_end - text_y_start
-    pages = []
-    sentences_processed = []
-    for sentence in sentences:
-        
-        text_length = draw.textlength(sentence, font)
-        if x + text_length <= width:
-            bbox_x, bbox_y, text_w, text_h = draw.textbbox((x, y), sentence, font=font)
-            sentences_processed.append([((bbox_x, bbox_y, text_w, text_h), sentence)])
-            x += text_length
-        else:
-            lines = []
-            words = sentence.split(' ')
-            line = ''
-            for word in words:
-                if draw.textlength(word) + x + draw.textlength(line) < width:
-                    line += " " + word
-                else:
-                    
-                    if line != '':
-                        bbox_x, bbox_y, text_w, text_h = draw.textbbox((x, y), line, font=font)
-                        lines.append(((bbox_x, bbox_y, text_w, text_h), line))
-                    
-                    x = 0
-                    line = word
-
-                    if y + text_height * 2 + H_SPACER <= height:
-                        y = y + text_height + H_SPACER
-                        
-                    else:
-                        sentences_processed.append(lines)
-                        pages.append(sentences_processed)
-                        lines = []
-                        sentences_processed = []
-                        y = 0
-            bbox_x, bbox_y, text_w, text_h = draw.textbbox((x, y), line, font=font)
-            lines.append(((bbox_x, bbox_y, text_w, text_h), line))
-            x = text_w
-            sentences_processed.append(lines)
-    return pages
-    
-
-def draw_page(image, page):
-    draw = ImageDraw.Draw(image)
-    for sentence in page:
-        for line in sentence:
-            draw.text((line[0][0], line[0][1]), line[1])
-    image.show()
-
-
-def highlight(image, item, index):
-    highlighted_image = image.copy()
-    draw = ImageDraw.Draw(highlighted_image)
-    for line in item[index]:
-        draw.rectangle(line[0], fill=0)
-        draw.text((line[0][0], line[0][1]), line[1], fill=255)
-    
-
-def scroll_menu(width, height, items, items_per_page, font):
-    images = []
-    pages = []
-    for i in range(0, len(items), items_per_page):
-        image = Image.new("1", (width, height), 255)
-        draw_button_labels(image, MAIN_MENU_CONTROLS, width, height)
-        draw = ImageDraw.Draw(image)
-        page_items = items[i:i + items_per_page]
-        box_height = (height - BUTTON_HEIGHT) / (items_per_page + 2)
-        first_item = ["Add_new"] if i == 0 else ["Previous page"] 
-        last_item = ["Next page"] if i + items_per_page < len(items) else []
-        all_items = first_item + page_items + last_item
-        coordinates = []
-        for j, item in enumerate(all_items):
-            draw.rectangle((10,box_height*j,width-10,box_height*(j+1)),outline=0)
-            draw.text((15,box_height*j),item,font=font)
-            coordinates.append(((10,box_height*j,width-10,box_height*(j+1)),item))
-        pages.append(coordinates)
-        images.append(image)
-            
-
-    return images, pages
-
-
-
-#code is in rough shape but here is some examples of what usage should look like, basically
-width = 600
-height = 400
-image = Image.new("1", (width, height), 255)  # 1-bit grayscale (black and white), white background
-font = ImageFont.load_default()  # Or load a specific font
 
 sample_text = """It is now three years after the events of A New Hope. The Rebel Alliance has been forced to flee its base on Yavin 4 and establish a new one on the ice planet of Hoth.
 An Imperial Star Destroyer, dispatched by the Sith Lord Darth Vader, continuing his quest for Luke Skywalker, launches thousands of probe droids across the galaxy, one of which lands on Hoth and begins its survey of the planet. Luke Skywalker, on patrol astride his tauntaun, discovers the probe, which he mistakes for a meteorite. After reporting to comrade Han Solo that he'll investigate the site, Luke is knocked unconscious by a deadly wampa.
@@ -125,23 +153,35 @@ Darth Vader and the Imperial forces set course for the Hoth system to set up the
 Aboard the Executor, General Maximilian Veers notifies Vader that Admiral Ozzel has emerged from lightspeed too close to Hoth. Ozzel intended to catch the Rebels unaware before they could set up their defenses. However, Vader realizes that the Rebels have been alerted to the fleet's arrival. Via video communication, Vader Force chokes Ozzel to death for his incompetence, then appoints Captain Firmus Piett the new Admiral on the spot. As Vader previously ordered, the Imperial ground forces, commanded by General Veers, land outside the Rebels' shield and march overland to destroy the power generator.
 Princess Leia gives the Rebel fighters instructions on the evacuation to leave Hoth two to three ships at a time past the energy shield to a rendezvous point, which is beyond the outer rim. Rieekan lowers the shields to fire the Ion cannon at one of the Imperial Star Destroyers allowing the first transports to escape. The Rebel pilots assigned to hold off the Imperial ground assault depart the Hoth base for the oncoming battle against heavily equipped Imperial forces, who are armed with agile AT-STs (All Terrain Scout Transports) and monstrous AT-AT (All Terrain Armored Transport) walkers, led by General Veers."""
 
-sentences = sample_text.split(".")
+items = ["title1", "title2", "title3", "title4", "title5", "title6"]
+# menu_images, menu_coordinates = scroll_menu(width, height, items, 4, font)
 
-items = ["title1","title2","title3","title4","title5","title6"]
-menu_images, menu_coordinates = scroll_menu(width,height,items,4,font)
+# for image in menu_images:
+#     image.show()
 
-for image in menu_images:
-    image.show()
+# image = Image.new("1", (width, height), 255)
+# pages = place_sentences(image, sentences, font, 0.0, 0.0, width, height)
+# draw_page(image, pages[0])
+# image = Image.new("1", (width, height), 255)
+# draw_page(image, pages[1])
+# image = Image.new("1", (width, height), 255)
+#
+# draw_page(image, pages[2])
+#
+# image = Image.new("1", (width, height), 255)
+# for i in range(len(pages[0])):
+#     highlight(image, pages[0], i)
 
-image = Image.new("1", (width, height), 255)
-pages = place_sentences(image, sentences, font, 0.0, 0.0, width, height)
-draw_page(image,pages[0])
-image = Image.new("1", (width, height), 255)
-draw_page(image,pages[1])
-image = Image.new("1", (width, height), 255)
-
-draw_page(image,pages[2])
-
-image = Image.new("1", (width, height), 255)    
-for i in range(len(pages[0])):
-    highlight(image,pages[0],i)
+if __name__ == '__main__':
+    sentences = sample_text.replace("\n", "").split(".")
+    if not sentences[-1]:
+        sentences = sentences[:-1]
+    sentences = [sentence.strip() + "." for sentence in sentences]
+    d = Display(600, 400, ImageFont.load_default(), 0, 10)
+    pages = Page.generate_pages(d.width, d.height, d.font, d.line_space, sentences)
+    # for page in pages:
+    #     page.draw_page().show()
+    page = pages[0]
+    print(page.sentences)
+    page.draw_highlight_sentences([0]).show()
+    page.draw_highlight_sentences([1]).show()
