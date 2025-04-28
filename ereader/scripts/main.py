@@ -5,7 +5,12 @@ from display import Display
 from picolistener import PicoListener, Button
 from library import Document
 from tts import TTSPlayer
+from picamera_test import DocumentCamera, image_filename
+from ocr import process_images
+import os
 
+
+SENTENCE_FILE_NAME = 'sentences.txt'
 
 class App:
     def __init__(self) -> None:
@@ -56,3 +61,25 @@ class App:
                 self.tts_player.add_sentences(f'{doc.id}/{doc.current_page + 1}', doc.get_next_page())
                 # todo change page on screen - shared function between tts mode and read mode? - that maybe updates tts too
             time.sleep(0.01)
+
+
+    def capture_images(self, directory: str) -> None:
+        # TODO: if we want to be able to add to existing files, should count the number of things in the dir here
+        camera = DocumentCamera(directory=directory)
+        new_images = []
+        while True:
+            match self.button_listener.check_interrupt():
+                case Button.UP:
+                    pass  # retake last image?
+                case Button.DOWN:
+                    pass  # no idea what this would be, trigger auto focus probably?
+                case Button.SELECT:
+                    new_images.append(camera.capture_image())
+                case Button.BACK:
+                    break  # done capturing?
+
+        new_text = process_images(new_images)
+
+        with open(os.path.join(directory,SENTENCE_FILE_NAME)) as file:
+            file.write(new_text)
+
