@@ -112,10 +112,10 @@ class Display:
         box_height = ascent + descent
         highlighted_image = image.copy()
         draw = ImageDraw.Draw(highlighted_image)
+        draw.font = font
         for item in text:
-            draw.rectangle((item[0], item[1], item[0] + draw.textlength(item[2], font=font), item[1] + box_height),
-                           fill=0)
-            draw.text((item[0], item[1]), item[2], fill=255, font=font)
+            draw.rectangle((item[0], item[1], item[0] + draw.textlength(item[2]), item[1] + box_height), fill=0)
+            draw.text((item[0], item[1]), item[2], fill=255)
         return highlighted_image
 
 
@@ -159,18 +159,6 @@ items = ["title1", "title2", "title3", "title4", "title5", "title6"]
 # for image in menu_images:
 #     image.show()
 
-# image = Image.new("1", (width, height), 255)
-# pages = place_sentences(image, sentences, font, 0.0, 0.0, width, height)
-# draw_page(image, pages[0])
-# image = Image.new("1", (width, height), 255)
-# draw_page(image, pages[1])
-# image = Image.new("1", (width, height), 255)
-#
-# draw_page(image, pages[2])
-#
-# image = Image.new("1", (width, height), 255)
-# for i in range(len(pages[0])):
-#     highlight(image, pages[0], i)
 
 if __name__ == '__main__':
     sentences = sample_text.replace("\n", "").split(".")
