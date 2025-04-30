@@ -1,5 +1,8 @@
 from typing import Iterable, Sequence
 from PIL import Image, ImageDraw, ImageFont
+from waveshare_epd import epd4in26
+
+import time
 
 MAIN_MENU_CONTROLS = ['up', 'down', 'select']
 
@@ -86,18 +89,21 @@ class Display:
         self.font = font
         self.button_height = button_height
         self.line_space = line_space
-        self.canvas = Image.new("1", (self.width, self.height))
+        self.epd = epd4in26.EPD()
+        self.epd.init()
+        self.epd.Clear()
+        self.canvas = Image.new("1", (self.epd.width, self.epd.height))
         self.buttons = Image.new("1", (self.width, self.button_height))
 
     def paint_canvas(self) -> None:
         """
         Displays the canvas on the e-ink screen.
         """
-        pass  # call function to draw canvas on ink screen
+        self.epd.display_Partial(self.epd.getbuffer(self.canvas))
 
-    def draw_screen(self, page: list[str]):
-        screen = Image.new("1", (self.width, self.height - self.button_height))
-        self.canvas.paste(screen, (0, 0))
+    def draw_screen(self, image: Image):
+        # screen = Image.new("1", (self.width, self.height - self.button_height))
+        self.canvas.paste(image, (0, 0))
 
     # def draw_button_labels(self, image: Image.Image, labels: list[str]):
     #     draw = ImageDraw.Draw(image)
@@ -159,17 +165,25 @@ items = ["title1", "title2", "title3", "title4", "title5", "title6"]
 # for image in menu_images:
 #     image.show()
 
+from tts import TTSPlayer
 
 if __name__ == '__main__':
     sentences = sample_text.replace("\n", "").split(".")
     if not sentences[-1]:
         sentences = sentences[:-1]
     sentences = [sentence.strip() + "." for sentence in sentences]
-    d = Display(600, 400, ImageFont.load_default(), 0, 10)
-    pages = Page.generate_pages(d.width, d.height, d.font, d.line_space, sentences)
+    d = Display(600, 400, ImageFont.load_default(20), 0, 0)
+    pages = Page.generate_pages(d.epd.width, d.epd.height, d.font, d.line_space, sentences)
     # for page in pages:
     #     page.draw_page().show()
+    tts_player = TTSPlayer('../tts')
+    tts_player.add_sentences('test', sentences)
     page = pages[0]
-    print(page.sentences)
-    page.draw_highlight_sentences([0]).show()
-    page.draw_highlight_sentences([1]).show()
+    i = 0
+    while i < len(page.sentences):
+        if not tts_player.is_playing():
+            tts_player.play_next('test')
+            d.draw_screen(page.draw_highlight_sentences([i]))
+            d.paint_canvas()
+            i += 1
+        time.sleep(0.01)

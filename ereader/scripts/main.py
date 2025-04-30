@@ -82,4 +82,7 @@ class App:
 
         with open(os.path.join(directory,SENTENCE_FILE_NAME)) as file:
             file.write(new_text)
+            
+if __name__ == '__main__':
+    
 
