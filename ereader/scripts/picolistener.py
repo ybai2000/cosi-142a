@@ -45,3 +45,10 @@ class PicoListener:
     def stop_listening(self):
         self.stop_event.set()  # Signal the thread to stop
         self.ser.close()  # Close the serial connection
+
+if __name__ == "__main__":
+    listener = PicoListener()
+    listener.listening()
+    print("Start Listening")
+    while True:
+        print(listener.check_interrupt)
