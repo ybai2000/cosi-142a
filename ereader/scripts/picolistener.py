@@ -50,5 +50,11 @@ if __name__ == "__main__":
     listener = PicoListener()
     listener.listening()
     print("Start Listening")
-    while True:
-        print(listener.check_interrupt)
+    try:
+        while True:
+            signal = listener.check_interrupt()  # Check for signals in the queue
+            if signal:
+                print(f"Received signal: {signal.name}")  # Print the signal to the terminal
+    except KeyboardInterrupt:
+        print("Stopping listener...")
+        listener.stop_listening()  # Stop the listener gracefully
