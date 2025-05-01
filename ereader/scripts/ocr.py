@@ -1,11 +1,12 @@
-from PIL import Image
+from PIL import Image, ImageEnhance
 import pytesseract
 from spacy.lang.en import English
 
 
 def image_to_text(image_file: str, delete_image: bool = True) -> str:
     image = Image.open(image_file).convert("L")
-
+    enhancer = ImageEnhance.Contrast(image) 
+    contrast_image = enhancer.enhance(0.3)
     text = pytesseract.image_to_string(image)
 
     return text
