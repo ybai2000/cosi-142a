@@ -1,13 +1,13 @@
-import threading
 import time
+import os
+from PIL import ImageFont
 
 from display import Display
 from picolistener import PicoListener, Button
 from library import Document
 from tts import TTSPlayer
-from picamera_test import DocumentCamera, image_filename
+from picamera_test import DocumentCamera
 from ocr import process_images
-import os
 
 
 SENTENCE_FILE_NAME = 'sentences.txt'
@@ -15,17 +15,21 @@ SENTENCE_FILE_NAME = 'sentences.txt'
 class App:
     def __init__(self) -> None:
         self.button_listener = PicoListener()
-        self.screen = Display()
+        self.screen = Display(600, 400, ImageFont.load_default(), 0, 10)
         self.tts_player = TTSPlayer('../tts')
 
     def read_file(self, file: str) -> None:
-        doc = Document(file)
+        doc = Document(file, self.screen.width, self.screen.height, self.screen.height, self.screen.line_space)
+        page = doc.get_current_page()
+        self.screen.draw_page(page.page_image())
         while True:
             match self.button_listener.check_interrupt():
                 case Button.UP:
-                    page = doc.get_next_page()
+                    page = doc.next_page()
+                    self.screen.draw_page(page.page_image())
                 case Button.DOWN:
-                    page = doc.get_prev_page()
+                    page = doc.prev_page()
+                    self.screen.draw_page(page.page_image())
                 case Button.SELECT:
                     self.tts_file(doc)
                 case Button.BACK:
@@ -33,8 +37,6 @@ class App:
             time.sleep(0.01)
         self.tts_player.clean()
 
-    def go_next_page(self):
-        pass
 
     # always load tts even if not playing?
     def tts_file(self, doc: Document) -> None:
@@ -82,7 +84,8 @@ class App:
 
         with open(os.path.join(directory,SENTENCE_FILE_NAME)) as file:
             file.write(new_text)
-            
-if __name__ == '__main__':
-    
 
+
+if __name__ == '__main__':
+    app = App()
+    app.read_file('../library/star_wars.txt')

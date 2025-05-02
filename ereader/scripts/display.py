@@ -25,7 +25,7 @@ class Page:
         self.draw = ImageDraw.Draw(self.image)
         self.draw.font = self.font
 
-    def draw_page(self) -> Image:
+    def page_image(self) -> Image:
         self.image_drawn = True
         for i, line in enumerate(self.lines):
             self.draw.text((0, i * (self.line_height + self.line_space)), line)
@@ -33,7 +33,7 @@ class Page:
 
     def draw_highlight_sentences(self, sentences: Sequence[int]) -> Image:
         if not self.image_drawn:
-            self.draw_page()
+            self.page_image()
         segments = []
         for sentence in sentences:
             segments.extend(self.sentences[sentence])
@@ -79,7 +79,14 @@ class Page:
 
 
 class Menu:
-    pass
+    def __init__(self, width: int, height: int, font: ImageFont) -> None:
+        self.width = width
+        self.height = height
+        self.font = font
+        self.image = Image.new("1", (self.width, self.height), 255)
+
+    def menu_image(self) -> Image:
+        return self.image
 
 
 class Display:
@@ -93,7 +100,6 @@ class Display:
         self.epd.init()
         self.epd.Clear()
         self.canvas = Image.new("1", (self.epd.width, self.epd.height))
-        self.buttons = Image.new("1", (self.width, self.button_height))
 
     def paint_canvas(self) -> None:
         """
@@ -101,16 +107,19 @@ class Display:
         """
         self.epd.display_Partial(self.epd.getbuffer(self.canvas))
 
-    def draw_screen(self, image: Image):
-        # screen = Image.new("1", (self.width, self.height - self.button_height))
-        self.canvas.paste(image, (0, 0))
+    def draw_screen(self, image: Image, margins=(0, 0)):
+        self.canvas.paste(image, margins)
 
-    # def draw_button_labels(self, image: Image.Image, labels: list[str]):
-    #     draw = ImageDraw.Draw(image)
-    #     button_label_width = self.width / 4
-    #     for i, label in enumerate(labels):
-    #         draw.rectangle((button_label_width * i + H_SPACER, height - BUTTON_HEIGHT,
-    #                         button_label_width * (i + 1) + H_SPACER, height - H_SPACER), outline=0)
+    def draw_button_labels(self, labels: list[str]) -> None:
+        if not self.button_height > 0:
+            return
+        buttons = Image.new("1", (self.epd.width, self.button_height), color="white")
+        draw = ImageDraw.Draw(buttons)
+        button_width = self.epd.width / len(labels)
+        for i, label in enumerate(labels):
+            draw.rectangle((button_width * i, 0, button_width * (i + 1), buttons.height), outline=0)
+            draw.text((button_width * (2 * i + 1) / 2, buttons.height / 2), label, fill="black", anchor="mm")
+        self.canvas.paste(buttons, (0, self.height - self.button_height))
 
     @staticmethod
     def highlight_text(image: Image, text: list[tuple[int, int, str]], font: ImageFont) -> Image:
@@ -123,29 +132,6 @@ class Display:
             draw.rectangle((item[0], item[1], item[0] + draw.textlength(item[2]), item[1] + box_height), fill=0)
             draw.text((item[0], item[1]), item[2], fill=255)
         return highlighted_image
-
-
-# def scroll_menu(width, height, items, items_per_page, font):
-#     images = []
-#     pages = []
-#     for i in range(0, len(items), items_per_page):
-#         image = Image.new("1", (width, height), 255)
-#         draw_button_labels(image, MAIN_MENU_CONTROLS, width, height)
-#         draw = ImageDraw.Draw(image)
-#         page_items = items[i:i + items_per_page]
-#         box_height = (height - BUTTON_HEIGHT) / (items_per_page + 2)
-#         first_item = ["Add_new"] if i == 0 else ["Previous page"]
-#         last_item = ["Next page"] if i + items_per_page < len(items) else []
-#         all_items = first_item + page_items + last_item
-#         coordinates = []
-#         for j, item in enumerate(all_items):
-#             draw.rectangle((10, box_height * j, width - 10, box_height * (j + 1)), outline=0)
-#             draw.text((15, box_height * j), item, font=font)
-#             coordinates.append(((10, box_height * j, width - 10, box_height * (j + 1)), item))
-#         pages.append(coordinates)
-#         images.append(image)
-#
-#     return images, pages
 
 
 sample_text = """It is now three years after the events of A New Hope. The Rebel Alliance has been forced to flee its base on Yavin 4 and establish a new one on the ice planet of Hoth.
@@ -174,8 +160,6 @@ if __name__ == '__main__':
     sentences = [sentence.strip() + "." for sentence in sentences]
     d = Display(600, 400, ImageFont.load_default(20), 0, 0)
     pages = Page.generate_pages(d.epd.width, d.epd.height, d.font, d.line_space, sentences)
-    # for page in pages:
-    #     page.draw_page().show()
     tts_player = TTSPlayer('../tts')
     tts_player.add_sentences('test', sentences)
     page = pages[0]

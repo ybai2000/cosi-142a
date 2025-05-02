@@ -5,12 +5,10 @@ from spacy.lang.en import English
 
 def image_to_text(image_file: str, delete_image: bool = True) -> str:
     image = Image.open(image_file).convert("L")
-
     text = pytesseract.image_to_string(image)
-
     return text
 
-def process_images(file_names: list[str]) -> None:
+def process_images(file_names: list[str]) -> list[str]:
     new_text = ""
     for file in file_names:
         new_text += image_to_text(file)
