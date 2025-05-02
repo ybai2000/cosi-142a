@@ -47,9 +47,9 @@ class App:
         while True:
             match self.button_listener.check_interrupt():
                 case Button.UP:
-                    pass  # volume up
+                    self.tts_player.volume_up()
                 case Button.DOWN:
-                    pass  # volumne down
+                    self.tts_player.volume_down()
                 case Button.SELECT:
                     self.tts_player.pause_resume()
                     break

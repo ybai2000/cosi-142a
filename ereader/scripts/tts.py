@@ -85,16 +85,16 @@ class TTSPlayer:
             self.volume = 0
             return
 
-    def volume_up(self):
-        self.volume = min(100, self.volume + 5)
+    def volume_up(self, value: int=10) -> None:
+        self.volume = min(100, self.volume + value)
         try:
             command = ["amixer", "sset", "Master", f"{self.volume}%"]
             subprocess.run(command)
         except Exception as e:
             print(f"Error increasing volume: {e}")
 
-    def volume_down(self):
-        self.volume = max(0, self.volume - 5)
+    def volume_down(self, value: int=10) -> None:
+        self.volume = max(0, self.volume - value)
         try:
             command = ["amixer", "sset", "Master", f"{self.volume}%"]
             subprocess.run(command)
