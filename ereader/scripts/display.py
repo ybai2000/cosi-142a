@@ -1,6 +1,7 @@
 from typing import Iterable, Sequence
 from PIL import Image, ImageDraw, ImageFont
 from waveshare_epd import epd4in26
+import math
 
 import time
 
@@ -79,14 +80,50 @@ class Page:
 
 
 class Menu:
-    def __init__(self, width: int, height: int, font: ImageFont) -> None:
+    def __init__(self, items: list[str], width: int, height: int, margins: tuple[int, int], font: ImageFont) -> None:
+        self.items = items
         self.width = width
         self.height = height
         self.font = font
-        self.image = Image.new("1", (self.width, self.height), 255)
+        self.images = []
+        self.margins = margins
+        ascent, _ = font.getmetrics()
+        self.box_height = ascent + 2 * margins[1]
+        self.items_per_page = self.height // self.box_height
+        num_pages = math.ceil(len(items) / self.items_per_page)
+        self.images = [Image.new("1", (self.width, self.height), 255) for i in range(num_pages)]
+        for i, image in enumerate(self.images):
+            draw = ImageDraw.Draw(image)
+            draw.font = font
+            for j in range(self.items_per_page):
+                item_num = i * self.items_per_page + j
+                if item_num == len(self.items):
+                    break
+                draw.rectangle((0, j * self.box_height, self.width, (j + 1) * self.box_height), outline=0)
+                draw.text((margins[0], int((j + 0.5) * self.box_height)), self.items[item_num], fill="black", anchor="lm")
+        self.selected = 0
 
     def menu_image(self) -> Image:
-        return self.image
+        image_num = self.selected // self.items_per_page
+        image = self.images[image_num].copy()
+        index = self.selected % self.items_per_page
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((0, index * self.box_height, self.width, (index + 1) * self.box_height), fill=0, outline=0)
+        draw.text((self.margins[0], int((index + 0.5) * self.box_height)), self.items[image_num * self.items_per_page + index], fill="white", anchor="lm")
+        return image
+
+    def go_item(self, index: int) -> None:
+        if index >= len(self.items) or index < 0:
+            raise ValueError("Index out of range")
+        self.selected = index
+        return index
+
+    def go_next_item(self) -> int:
+        return self.go_item((self.selected + 1) % len(self.items))
+
+    def go_prev_item(self) -> int:
+        return self.go_item((self.selected - 1) % len(self.items))
+
 
 
 class Display:
