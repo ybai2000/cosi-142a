@@ -39,21 +39,24 @@ class Fontmanager:
                 data = json.load(f)
                 self.info = Fontinfo(**data)
 
-        self.available_fonts = [
-            name for name in os.listdir(self.font_dir_path)
+        self.fonts_to_path = {
+            name: os.path.join(self.font_dir_path, name)
+            for name in os.listdir(self.font_dir_path)
             if os.path.isdir(os.path.join(self.font_dir_path, name))
-        ]
+        }
 
     def list_available_fonts(self) -> list[str]:
-        return self.available_fonts
+        return list(self.fonts_to_path.keys())
+
+    def set_font(self, name: str, size: float=12):
+        if name in self.list_available_fonts():
+            self.info = Fontinfo(self.fonts_to_path[name], size)
+            with open(self.font_config_path, "w") as f:
+                json.dump(self.info.to_dict(), f, indent=4)
 
     def get_font(self) -> ImageFont:
         return self.info.get_font()
-    
-    def select_font(self):
-        # TODO: Implement font selection logic
-        return
 
 if __name__ == "__main__":
     fm = Fontmanager()
-    print(fm.list_available_fonts())
+    print(fm.fonts_to_path)
