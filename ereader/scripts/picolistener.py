@@ -36,11 +36,14 @@ class PicoListener:
     def get_signal_queue(self):
         return self.queue
 
-    def check_interrupt(self):
+    def check_interrupt(self) -> Button | None:
         try:
             return self.queue.get_nowait()
         except queue.Empty:
             return None
+
+    def get_interrupt(self) -> Button:
+        return self.queue.get()
 
     def stop_listening(self):
         self.stop_event.set()  # Signal the thread to stop

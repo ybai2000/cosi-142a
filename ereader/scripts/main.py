@@ -2,7 +2,7 @@ import time
 import os
 from PIL import ImageFont
 
-from display import Display
+from display import Display, Menu
 from picolistener import PicoListener, Button
 from library import Document
 from tts import TTSPlayer
@@ -15,21 +15,46 @@ SENTENCE_FILE_NAME = 'sentences.txt'
 class App:
     def __init__(self) -> None:
         self.button_listener = PicoListener()
-        self.screen = Display(600, 400, ImageFont.load_default(), 0, 10)
+        self.button_listener.listening()
+        self.screen = Display(600, 400, ImageFont.load_default(), 30, 10)
         self.tts_player = TTSPlayer('../tts')
+
+    def menu_test(self):
+        menu = Menu(["a", "b", "c", "d"], self.screen.width, self.screen.height - self.screen.button_height, (20, 20), self.screen.font)
+        self.screen.draw_screen(menu.menu_image())
+        self.screen.draw_button_labels(["Down", "Back", "Select", "Up"])
+        self.screen.paint_canvas()
+        while True:
+            b = self.button_listener.get_interrupt()
+            print(b)
+            match b:
+                case Button.UP:
+                    menu.go_prev_item()
+                    self.screen.draw_screen(menu.menu_image())
+                    self.screen.paint_canvas()
+                case Button.DOWN:
+                    menu.go_next_item()
+                    self.screen.draw_screen(menu.menu_image())
+                    self.screen.paint_canvas()
+                case Button.SELECT:
+                    print(menu.selected)
+                case Button.BACK:
+                    break  # go back to menu
+
+
 
     def read_file(self, file: str) -> None:
         doc = Document(file, self.screen.width, self.screen.height, self.screen.height, self.screen.line_space)
         page = doc.get_current_page()
-        self.screen.draw_page(page.page_image())
+        self.screen.draw_screen(page.page_image())
         while True:
             match self.button_listener.check_interrupt():
                 case Button.UP:
                     page = doc.next_page()
-                    self.screen.draw_page(page.page_image())
+                    self.screen.draw_screen(page.page_image())
                 case Button.DOWN:
                     page = doc.prev_page()
-                    self.screen.draw_page(page.page_image())
+                    self.screen.draw_screen(page.page_image())
                 case Button.SELECT:
                     self.tts_file(doc)
                 case Button.BACK:
@@ -88,4 +113,5 @@ class App:
 
 if __name__ == '__main__':
     app = App()
-    app.read_file('../library/star_wars.txt')
+    app.menu_test()
+    # app.read_file('../library/star_wars.txt')
