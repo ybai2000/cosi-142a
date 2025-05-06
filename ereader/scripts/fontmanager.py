@@ -1,6 +1,51 @@
+from collections import defaultdict
 import os
 import json
+import re
 from PIL import ImageFont
+
+class FontNotFoundError(Exception):
+    pass
+
+class FontNotAvailableError(Exception):
+    pass
+
+class FontCollection:
+    def __init__(self, collection_path=None):
+        self.collection_path = collection_path
+        self.fonts = defaultdict(dict)  # Store fonts by name and style
+        if collection_path and os.path.exists(collection_path):
+            self._load_fonts()
+
+    def _load_fonts(self) -> None:
+        """Load all fonts from the collection path."""
+        for font_dir in os.listdir(self.collection_path):
+            font_path = os.path.join(self.collection_path, font_dir)
+            if os.path.isdir(font_path):
+                self._load_font_styles(font_dir, font_path)
+
+    def _load_font_styles(self, font_name, font_path) -> None:
+        """Load styles (e.g., regular, italic, bold) for a font family."""
+        style_map = {
+            "regular": re.compile(r".*-Regular\.ttf$", re.IGNORECASE),
+            "italic": re.compile(r".*-Italic\.ttf$", re.IGNORECASE),
+            "bold": re.compile(r".*-Bold\.ttf$", re.IGNORECASE),
+            "bolditalic": re.compile(r".*-BoldItalic\.ttf$", re.IGNORECASE),
+        }
+        for file in os.listdir(font_path):
+            for style, pattern in style_map.items():
+                if pattern.match(file):
+                    self.fonts[font_name][style] = os.path.join(font_path, file)
+
+    def get_font(self, name, style='regular') -> str:
+        """Retrieve the font path for a given name and style."""
+        if name in self.fonts and style in self.fonts[name]:
+            return self.fonts[name][style]
+        raise FontNotAvailableError(f"Font '{name}' with style '{style}' not found.")
+
+    def list_fonts(self) -> dict:
+        """List all available fonts with their styles."""
+        return {name: list(styles.keys()) for name, styles in self.fonts.items()}
 
 class Fontinfo:
     def __init__(self, font_path=None, size=12):
@@ -58,5 +103,14 @@ class Fontmanager:
         return self.info.get_font()
 
 if __name__ == "__main__":
-    fm = Fontmanager()
-    print(fm.fonts_to_path)
+    fc = FontCollection()
+
+    # List all fonts and their available styles
+    print(fc.list_fonts())
+
+    # Get the path to a specific font and style
+    try:
+        font_path = fc.get_font("Arial", "italic")
+        print(f"Path to Arial italic: {font_path}")
+    except FontNotAvailableError as e:
+        print(e)
