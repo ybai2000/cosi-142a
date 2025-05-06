@@ -25,7 +25,7 @@ class FontCollection:
                 self._load_font_styles(font_dir, font_path)
 
     def _load_font_styles(self, font_name, font_path) -> None:
-        """Load styles (e.g., regular, italic, bold) for a font family."""
+        """Load styles (regular, italic, bold, bolditalic) for a font family."""
         style_map = {
             "regular": re.compile(r".*-Regular\.ttf$", re.IGNORECASE),
             "italic": re.compile(r".*-Italic\.ttf$", re.IGNORECASE),
@@ -103,14 +103,10 @@ class Fontmanager:
         return self.info.get_font()
 
 if __name__ == "__main__":
-    fc = FontCollection()
+    fc = FontCollection("/workspaces/cosi-142a/ereader/fonts")
 
     # List all fonts and their available styles
     print(fc.list_fonts())
 
-    # Get the path to a specific font and style
-    try:
-        font_path = fc.get_font("Arial", "italic")
-        print(f"Path to Arial italic: {font_path}")
-    except FontNotAvailableError as e:
-        print(e)
+    print(fc.get_font("IBM_Plex_Mono", "regular"))
+
