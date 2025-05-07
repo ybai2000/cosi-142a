@@ -90,21 +90,21 @@ class Page:
 
 
 class Menu:
-    def __init__(self, items: list[str], width: int, height: int, margins: tuple[int, int], font: ImageFont) -> None:
+    def __init__(self, items: list[str], width: int, height: int, margins: tuple[int, int]) -> None:
         self.items = items
         self.width = width
         self.height =  height
-        self.font = font
+        self.font = ImageFont.load_default(40)
         self.images = []
         self.margins = margins
-        ascent, _ = font.getmetrics()
+        ascent, _ = self.font.getmetrics()
         self.box_height = ascent + 2 * margins[1]
         self.items_per_page = self.height // self.box_height
         num_pages = math.ceil(len(items) / self.items_per_page)
         self.images = [Image.new("1", (self.width, self.height), 255) for i in range(num_pages)]
         for i, image in enumerate(self.images):
             draw = ImageDraw.Draw(image)
-            draw.font = font
+            draw.font = self.font
             for j in range(self.items_per_page):
                 item_num = i * self.items_per_page + j
                 if item_num == len(self.items):
@@ -118,6 +118,7 @@ class Menu:
         image = self.images[image_num].copy()
         index = self.selected % self.items_per_page
         draw = ImageDraw.Draw(image)
+        draw.font = self.font
         draw.rectangle((0, index * self.box_height, self.width, (index + 1) * self.box_height), fill=0, outline=0)
         draw.text((self.margins[0], int((index + 0.5) * self.box_height)), self.items[image_num * self.items_per_page + index], fill="white", anchor="lm")
         return image

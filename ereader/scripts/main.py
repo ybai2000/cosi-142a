@@ -18,21 +18,25 @@ class App:
         self.button_listener.listening()
         self.display = Display(ImageFont.load_default(), 30, 10)
         self.tts_player = TTSPlayer('tts')
-        with open('library/.metadata.json', 'r') as file:
-            self.library = json.load(file)
-            if not isinstance(self.library, list):
-                print("Library metadata is not a json list")
+        self.library = []
+        try:
+            with open('library/.metadata.json', 'r') as file:
+                self.library = json.load(file)
+                if not isinstance(self.library, list):
+                    print("Library metadata is not a json list")
+        except FileNotFoundError:
+            pass
         self.fontmanager = Fontmanager()
         self.font = self.fontmanager.get_current_font()
 
     def start(self) -> None:
         while True:
-            match self.menu(["Library", "Font"]):
+            match self.menu(["Library", "Font"], back=False):
                 case 0:
                     library_selection = self.menu(self.library + ["Add new document"])
                     if library_selection == len(self.library):
-                        pass  # ocr for new doc
-                    else:
+                        self.capture_images(f'library/doc_{len(self.library)}')
+                    elif library_selection is not None:
                         self.read_document(library_selection)
                 case 1:
                     fonts = self.fontmanager.list_available_fonts()
@@ -41,15 +45,13 @@ class App:
                         self.fontmanager.set_font(fonts[font_selection])
                         self.font = self.fontmanager.get_current_font()
 
-    def menu(self, items: list[str]) -> int | None:
-        menu = Menu(items, self.display.width, self.display.height - self.display.button_height, (20, 20),
-                    self.display.font)
+    def menu(self, items: list[str], back=True) -> int | None:
+        menu = Menu(items, self.display.width, self.display.height - self.display.button_height, (20, 20))
         self.display.draw_screen(menu.menu_image())
         self.display.draw_button_labels(["Down", "Back", "Select", "Up"])
         self.display.paint_canvas()
         while True:
             b = self.button_listener.get_interrupt()
-            print(b)
             match b:
                 case Button.UP:
                     menu.go_prev_item()
@@ -60,13 +62,14 @@ class App:
                     self.display.draw_screen(menu.menu_image())
                     self.display.paint_canvas()
                 case Button.SELECT:
-                    print(menu.selected)
+                    return menu.selected
                 case Button.BACK:
-                    return None
+                    if back:
+                        return None
 
     def read_document(self, id: int) -> None:
-        filename = f'doc_{id}/text.txt'
-        doc = Document(filename, self.display.width, self.display.height, self.font, self.display.line_space)
+        filename = f'library/doc_{id}/text.txt'
+        doc = Document(filename, self.display.width, self.display.height - self.display.button_height, self.font, self.display.line_space)
         page = doc.get_current_page()
         self.display.draw_screen(page.page_image())
         self.display.paint_canvas()
@@ -74,12 +77,14 @@ class App:
             match self.button_listener.get_interrupt():
                 case Button.UP:
                     page = doc.next_page()
-                    self.display.draw_screen(page.page_image())
-                    self.display.paint_canvas()
+                    if page is not None:
+                        self.display.draw_screen(page.page_image())
+                        self.display.paint_canvas()
                 case Button.DOWN:
                     page = doc.prev_page()
-                    self.display.draw_screen(page.page_image())
-                    self.display.paint_canvas()
+                    if page is not None:
+                        self.display.draw_screen(page.page_image())
+                        self.display.paint_canvas()
                 case Button.SELECT:
                     self.tts_file(doc)
                 case Button.BACK:
@@ -147,24 +152,6 @@ class App:
 
 if __name__ == '__main__':
     directory = 'test_doc_last_day'
-    button_listener = PicoListener()
-    button_listener.listening()
-    camera = DocumentCamera(directory=directory)
-    while True:
-        match button_listener.check_interrupt():
-            case Button.UP:
-                camera.retake_image()
-            case Button.DOWN:
-                pass  # no idea what this would be, trigger auto focus probably?
-            case Button.SELECT:
-                camera.capture_image()
-            case Button.BACK:
-                images = camera.done_capturing()
-                text_lines = process_images(images)
-                for line in text_lines:
-                    print(line)
-                break  # done capturing?
     
-    #app = App()
-    #app.menu_test()
-    # app.read_file('../library/star_wars.txt')
+    app = App()
+    app.start()

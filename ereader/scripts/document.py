@@ -5,7 +5,7 @@ from display import Page
 class Document:
     def __init__(self, path: str, width: int, height: int, font: ImageFont, line_space: int) -> None:
         with open(path, 'r') as file:
-            self.sentences: list[str] = file.readlines()
+            self.sentences: list[str] = file.read().splitlines()
         self.pages: list[Page] = Page.generate_pages(width, height, font, line_space, self.sentences)
         self.current_page = 1  # read from metadata if not 1
         self.id = 0 # numerical designation of document
