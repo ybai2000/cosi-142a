@@ -10,6 +10,8 @@ class TTSPlayer:
         self.tts_procs: defaultdict[str, list[subprocess.Popen]] = defaultdict(list)
         self.playing_sent: dict[str, int] = {}
         self.audio_proc: subprocess.Popen = None
+        self.volume: int = None
+        self.init_volume()
 
     def add_sentences(self, dirname: str, sentences: list[str]) -> None:
         os.makedirs(os.path.join(self.tts_dir, dirname), exist_ok=True)
@@ -62,7 +64,44 @@ class TTSPlayer:
         self.playing_sent = {}
         self.audio_proc = None
         
-        
+    def init_volume(self) -> None:
+        try:
+            process = subprocess.Popen(["amixer", "sget", "Master"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            output, error = process.communicate()
+
+            if process.returncode != 0:
+                print(f"Error exectuting amixer: {error.strip()}")
+                self.volume = 0
+                return
+            
+            for line in output.splitlines():
+                if "%" in line:
+                    volume_str = line.split("[")[2].split("%")[0]
+                    self.volume = int(volume_str)
+                    return
+        except (IndexError, ValueError) as e:
+            print(f"Error retrieving volume: {e}")
+        finally:
+            self.volume = 0
+            return
+
+    def volume_up(self, value: int=10) -> None:
+        self.volume = min(100, self.volume + value)
+        try:
+            command = ["amixer", "sset", "Master", f"{self.volume}%"]
+            subprocess.run(command)
+        except Exception as e:
+            print(f"Error increasing volume: {e}")
+
+    def volume_down(self, value: int=10) -> None:
+        self.volume = max(0, self.volume - value)
+        try:
+            command = ["amixer", "sset", "Master", f"{self.volume}%"]
+            subprocess.run(command)
+        except Exception as e:
+            print(f"Error increasing volume: {e}")
+
+            
 sample_text = """It is now three years after the events of A New Hope. The Rebel Alliance has been forced to flee its base on Yavin 4 and establish a new one on the ice planet of Hoth.
 An Imperial Star Destroyer, dispatched by the Sith Lord Darth Vader, continuing his quest for Luke Skywalker, launches thousands of probe droids across the galaxy, one of which lands on Hoth and begins its survey of the planet. Luke Skywalker, on patrol astride his tauntaun, discovers the probe, which he mistakes for a meteorite. After reporting to comrade Han Solo that he'll investigate the site, Luke is knocked unconscious by a deadly wampa.
 When Luke fails to report in at Echo Base, Han Solo goes out on his tauntaun to search for him in an encroaching storm. Upon waking up, Luke finds himself hanging upside down in a cave; his eyes opening to the sight of a wampa eating his tauntaun. Using the power of the Force, Luke is able to pull his lightsaber out of the snow and to himself. After he ignites it, he cuts himself free and cuts off the attacking wampa's arm just in time, running out of the cave and escaping into the cold night of Hoth.
