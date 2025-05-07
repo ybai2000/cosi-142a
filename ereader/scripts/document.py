@@ -24,14 +24,14 @@ class Document:
     def get_prev_page(self) -> Page:
         return self.get_page(self.current_page - 1)
 
-    def next_page(self) -> Page:
+    def next_page(self) -> Page | None:
         if self.current_page == len(self.pages):
-            raise ValueError(f'Page {self.current_page + 1} is out of range')
+            return None
         self.current_page += 1
         return self.get_page(self.current_page)
 
-    def prev_page(self) -> Page:
+    def prev_page(self) -> Page | None:
         if self.current_page == 1:
-            raise ValueError(f'Page {self.current_page - 1} is out of range')
+            return None
         self.current_page -= 1
         return self.get_page(self.current_page)

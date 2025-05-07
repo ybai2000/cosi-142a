@@ -19,7 +19,7 @@ class PicoListener:
         self.queue = queue.Queue()
         self.stop_event = threading.Event()  # Event to stop the thread
 
-    def read_signal(self):
+    def read_signal(self) -> None:
         while not self.stop_event.is_set():  # Check if the thread should stop
             if self.ser.in_waiting > 0:
                 try:
@@ -28,12 +28,12 @@ class PicoListener:
                 except Exception as e:
                     print(f"Error reading signal: {e}")
 
-    def listening(self):
+    def listening(self) -> None:
         listener_thread = threading.Thread(target=self.read_signal)
         listener_thread.daemon = True
         listener_thread.start()
 
-    def get_signal_queue(self):
+    def get_signal_queue(self) -> queue.Queue:
         return self.queue
 
     def check_interrupt(self) -> Button | None:
@@ -45,9 +45,10 @@ class PicoListener:
     def get_interrupt(self) -> Button:
         return self.queue.get()
 
-    def stop_listening(self):
+    def stop_listening(self) -> None:
         self.stop_event.set()  # Signal the thread to stop
         self.ser.close()  # Close the serial connection
+
 
 if __name__ == "__main__":
     listener = PicoListener()
