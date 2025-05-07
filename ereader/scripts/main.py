@@ -20,7 +20,7 @@ class App:
         self.tts_player = TTSPlayer('../tts')
 
     def menu_test(self):
-        menu = Menu(["a", "b", "c", "d"], self.screen.width, self.screen.height - self.screen.button_height, (20, 20), self.screen.font)
+        menu = Menu(["settings","library"], self.screen.width, self.screen.height - self.screen.button_height, (20, 20), self.screen.font)
         self.screen.draw_screen(menu.menu_image())
         self.screen.draw_button_labels(["Down", "Back", "Select", "Up"])
         self.screen.paint_canvas()
@@ -93,25 +93,49 @@ class App:
     def capture_images(self, directory: str) -> None:
         # TODO: if we want to be able to add to existing files, should count the number of things in the dir here
         camera = DocumentCamera(directory=directory)
-        new_images = []
         while True:
             match self.button_listener.check_interrupt():
                 case Button.UP:
+                    camera.retake_image()
                     pass  # retake last image?
                 case Button.DOWN:
                     pass  # no idea what this would be, trigger auto focus probably?
                 case Button.SELECT:
-                    new_images.append(camera.capture_image())
+                    camera.capture_image()
                 case Button.BACK:
+                    images = camera.done_capturing()
+                    text_lines = process_images(images)
+                    with open(f"{directory}/text.txt",'w') as file:
+                        for line in text_lines:
+                            write(line)
                     break  # done capturing?
 
-        new_text = process_images(new_images)
+
 
         with open(os.path.join(directory,SENTENCE_FILE_NAME)) as file:
             file.write(new_text)
 
 
 if __name__ == '__main__':
-    app = App()
-    app.menu_test()
+    directory = 'test_doc_last_day'
+    button_listener = PicoListener()
+    button_listener.listening()
+    camera = DocumentCamera(directory=directory)
+    while True:
+        match button_listener.check_interrupt():
+            case Button.UP:
+                camera.retake_image()
+            case Button.DOWN:
+                pass  # no idea what this would be, trigger auto focus probably?
+            case Button.SELECT:
+                camera.capture_image()
+            case Button.BACK:
+                images = camera.done_capturing()
+                text_lines = process_images(images)
+                for line in text_lines:
+                    print(line)
+                break  # done capturing?
+    
+    #app = App()
+    #app.menu_test()
     # app.read_file('../library/star_wars.txt')
