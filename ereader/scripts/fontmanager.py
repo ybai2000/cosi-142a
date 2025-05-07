@@ -138,7 +138,7 @@ class Fontmanager:
         else:
             raise FontNotAvailableError(f"Font '{font_name}' not found.")
 
-    def set_font(self, font_name: str, style: str) -> None:
+    def set_font(self, font_name: str, style: str="regular") -> None:
         """Set the font and style for the Fontinfo object."""
         try:
             font_path = self.font_collection.get_font(font_name, style)
@@ -152,7 +152,7 @@ class Fontmanager:
         """Get the current font object."""
         return self.current.get_font()
 
-    def get_currnent_size(self) -> float:
+    def get_current_size(self) -> float:
         """Get the current font size."""
         return self.current.get_size()
     
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     print("Available styles for", font_name, ":", fm.list_available_styles(font_name))
     fm.set_font(font_name, "regular")
     print("Current font object:", fm.get_current_font())
-    print("Font size:", fm.get_currnent_size)
+    print("Font size:", fm.get_current_size)
 
     sample_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
     out = Image.new("1", (500, 500), 1)

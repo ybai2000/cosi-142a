@@ -11,8 +11,6 @@ from tts import TTSPlayer
 from picamera_test import DocumentCamera
 from ocr import process_images
 
-SENTENCE_FILE_NAME = 'sentences.txt'
-
 
 class App:
     def __init__(self) -> None:
@@ -24,10 +22,12 @@ class App:
             self.library = json.load(file)
             if not isinstance(self.library, list):
                 print("Library metadata is not a json list")
+        self.fontmanager = Fontmanager()
+        self.font = self.fontmanager.get_current_font()
 
     def start(self) -> None:
         while True:
-            match self.menu(["Library", "Settings"]):
+            match self.menu(["Library", "Font"]):
                 case 0:
                     library_selection = self.menu(self.library + ["Add new document"])
                     if library_selection == len(self.library):
@@ -35,7 +35,11 @@ class App:
                     else:
                         self.read_document(library_selection)
                 case 1:
-                    pass # settings (font selection)
+                    fonts = self.fontmanager.list_available_fonts()
+                    font_selection = self.menu(fonts)
+                    if font_selection is not None:
+                        self.fontmanager.set_font(fonts[font_selection])
+                        self.font = self.fontmanager.get_current_font()
 
     def menu(self, items: list[str]) -> int | None:
         menu = Menu(items, self.display.width, self.display.height - self.display.button_height, (20, 20),
@@ -62,7 +66,7 @@ class App:
 
     def read_document(self, id: int) -> None:
         filename = f'doc_{id}/text.txt'
-        doc = Document(filename, self.display.width, self.display.height, self.display.font, self.display.line_space)
+        doc = Document(filename, self.display.width, self.display.height, self.font, self.display.line_space)
         page = doc.get_current_page()
         self.display.draw_screen(page.page_image())
         self.display.paint_canvas()
@@ -134,26 +138,6 @@ class App:
         with open(os.path.join(directory, SENTENCE_FILE_NAME)) as file:
             file.write(new_text)
 
-
-    def set_font(self) -> None:
-        fontmanager = Fontmanager()
-        
-        while True:
-            match self.button_listener.check_interrupt():
-                case Button.UP:
-                    # TODO
-                    pass
-                case Button.DOWN:
-                    # TODO
-                    pass
-                case Button.SELECT:
-                    # TODO
-                    pass
-                case Button.BACK:
-                    # TODO
-                    break
-
-        self.screen = Display(600, 400, fontmanager.get_current_font(), 0, 10)
 
 
 if __name__ == '__main__':
