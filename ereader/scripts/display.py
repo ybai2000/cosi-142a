@@ -128,14 +128,14 @@ class Menu:
 
 class Display:
     def __init__(self, width: int, height: int, font: ImageFont, button_height: int, line_space: int) -> None:
-        self.width = width
-        self.height = height
         self.font = font
         self.button_height = button_height
         self.line_space = line_space
         self.epd = epd4in26.EPD()
         self.epd.init()
         self.epd.Clear()
+        self.width = self.epd.width
+        self.height = self.epd.height
         self.canvas = Image.new("1", (self.epd.width, self.epd.height))
 
     def paint_canvas(self) -> None:
