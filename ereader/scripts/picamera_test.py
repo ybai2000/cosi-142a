@@ -1,35 +1,50 @@
 from picamera2 import Picamera2, Preview
 from libcamera import controls
 import time
+from PIL import Image
 
     
 class DocumentCamera:
     def __init__(self, directory: str, num_pages:  int = 0) -> None:
-        self.camera = Picamera2()
-        # camera_config = self.camera.create_still_configuration()
-        self.camera.configure("preview")
+        #self.camera = Picamera2()
+        #self.capture_config = self.camera.create_still_configuration()
+        #self.camera.configure("preview")
         self.directory = directory
-        self.num_pages = num_pages
+        self.images = []
 
     def capture_image(self) -> str:
-        image_file = f'image_{self.num_pages}.jpg'
+        self.camera = Picamera2()
+        self.capture_config = self.camera.create_still_configuration()
+        self.camera.configure("preview")
         self.camera.start_preview(Preview.QTGL)
         self.camera.start()
         self.camera.set_controls({"AfMode": controls.AfModeEnum.Continuous})
-        time.sleep(6)
-        self.camera.capture_file(image_file)
-        self.camera.stop()
-        self.num_pages += 1
-        return image_file
+        time.sleep(2)
+        array = self.camera.switch_mode_and_capture_array(self.capture_config, "main")
+        img = Image.fromarray(array)
+        img.show()
+        self.camera.close()
+        self.images.append(img)
+        
+    def retake_image(self) -> str:
+        if len(self.images) > 0:
+            self.images = self.images[:-1]
+        self.capture_image()
+        
+        
+    def done_capturing(self):
+        self.camera.close()
+        return self.images
+                
 
 
 
 
 if __name__ == '__main__':
         picam2 = Picamera2()
-        camera_config = picam2.create_preview_configuration()
-        picam2.configure(camera_config)
-        picam2.start_preview(Preview.QTGL)
-        picam2.start()
-        time.sleep(2)
-        picam2.capture_file("test.jpg")
+        capture_config = picam2.create_still_configuration()
+        picam2.start(show_preview=True)
+        time.sleep(3)
+        array = picam2.switch_mode_and_capture_array(capture_config, "main")
+        img = Image.fromarray(array)
+        img.show()

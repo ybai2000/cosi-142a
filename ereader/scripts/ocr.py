@@ -1,17 +1,21 @@
-from PIL import Image
+from PIL import Image,ImageEnhance
 import pytesseract
 from spacy.lang.en import English
 
 
-def image_to_text(image_file: str, delete_image: bool = True) -> str:
-    image = Image.open(image_file).convert("L")
-    text = pytesseract.image_to_string(image)
+def image_to_text(image: Image, delete_image: bool = True) -> str:
+    #image = Image.open(image_file).convert("L")
+    contrast_enhancer=ImageEnhance.Contrast(image)
+    enhanced=contrast_enhancer.enhance(1.4)
+    sharpness_enhancer=ImageEnhance.Sharpness(enhanced)
+    final_image=sharpness_enhancer.enhance(1.4)
+    text = pytesseract.image_to_string(final_image)
     return text
 
-def process_images(file_names: list[str]) -> list[str]:
+def process_images(images: list[Image]) -> list[str]: #file_names: list[str]) -> list[str]:
     new_text = ""
-    for file in file_names:
-        new_text += image_to_text(file)
+    for image in images:
+        new_text += image_to_text(image)
     nlp = English()
     nlp.add_pipe("sentencizer")
     doc = nlp(new_text.replace('\n', ' '))
