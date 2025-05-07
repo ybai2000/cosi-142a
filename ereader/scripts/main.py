@@ -3,6 +3,7 @@ import os
 from PIL import ImageFont
 
 from display import Display, Menu
+from fontmanager import Fontmanager
 from picolistener import PicoListener, Button
 from library import Document
 from tts import TTSPlayer
@@ -109,6 +110,27 @@ class App:
 
         with open(os.path.join(directory,SENTENCE_FILE_NAME)) as file:
             file.write(new_text)
+
+
+    def set_font(self) -> None:
+        fontmanager = Fontmanager()
+        
+        while True:
+            match self.button_listener.check_interrupt():
+                case Button.UP:
+                    # TODO
+                    pass
+                case Button.DOWN:
+                    # TODO
+                    pass
+                case Button.SELECT:
+                    # TODO
+                    pass
+                case Button.BACK:
+                    # TODO
+                    break
+
+        self.screen = Display(600, 400, fontmanager.get_current_font(), 0, 10)
 
 
 if __name__ == '__main__':
