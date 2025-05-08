@@ -111,7 +111,7 @@ class Fontmanager:
         self.font_dir_path = os.path.join(script_dir, "..", "fonts")
         self.font_config_path = os.path.join(self.font_dir_path, "fontconfig.json")
         self.font_collection = FontCollection(self.font_dir_path)
-
+        self.font_sizes: list[int] = [17, 19, 23, 29, 31, 37] # using primes right now
         # Initialize default config if it does not exist
         if not os.path.exists(self.font_config_path):
             self.current = Fontinfo()
@@ -131,6 +131,10 @@ class Fontmanager:
         """List all available fonts in the collection."""
         return list(self.font_collection.fonts.keys())
     
+    def list_available_sizes(self) -> list[float]:
+        """List all available font sizes"""
+        return self.font_sizes
+    
     def list_available_styles(self, font_name: str) -> list[str]:
         """List all available styles for a given font."""
         if font_name in self.font_collection.fonts:
@@ -147,6 +151,13 @@ class Fontmanager:
                 json.dump(self.current.to_dict(), f, indent=4)
         except FontNotAvailableError as e:
             print(e)
+
+    def set_size(self, size: int) -> None:
+        """Set the font with given size"""
+        self.current.set_size(size)
+        with open(self.font_config_path, "w") as f:
+                json.dump(self.current.to_dict(), f, indent=4)
+
 
     def get_current_font(self) -> ImageFont.FreeTypeFont:
         """Get the current font object."""
@@ -179,13 +190,19 @@ if __name__ == "__main__":
     print("Available styles for", font_name, ":", fm.list_available_styles(font_name))
     fm.set_font(font_name, "regular")
     print("Current font object:", fm.get_current_font())
-    print("Font size:", fm.get_current_size)
-
+    print("Font size before:", fm.get_current_size())
     sample_text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
     out = Image.new("1", (500, 500), 1)
     draw = ImageDraw.Draw(out)
     draw.text((10, 10), sample_text, font=fm.get_current_font(), fill=0)
     out.show()
-    out.save("test.png")
+    out.save("test1.png")
     out.close()
-    os.remove("test.png")
+    fm.set_size(fm.list_available_sizes()[-1])
+    print("Font size after:", fm.get_current_size())
+
+    out = Image.new("1", (500, 500), 1)
+    draw = ImageDraw.Draw(out)
+    draw.text((10, 10), sample_text, font=fm.get_current_font(), fill=0)
+    out.show()
+    out.save("test2.png")
