@@ -1,6 +1,5 @@
 from enum import Enum
 import serial
-import json
 import threading
 import queue
 
@@ -11,7 +10,7 @@ class Button(Enum):
     DOWN = 4
 
 class PicoListener:
-    def __init__(self):
+    def __init__(self) -> None:
         self.PORT = "/dev/ttyACM0"
         self.BAUDRATE = 115200
         self.DICT = ("select", "back", "up", "down")

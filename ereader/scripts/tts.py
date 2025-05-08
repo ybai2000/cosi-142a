@@ -44,6 +44,10 @@ class TTSPlayer:
         self.playing_sent[dirname] = self.playing_sent[dirname] - 1 if self.playing_sent[dirname] > 1 else 1
         return self.play_sentence(dirname, self.playing_sent[dirname])
 
+    def stop(self) -> None:
+        self.audio_proc.kill()
+
+    # does not work currently
     def pause_resume(self) -> None:
         if self.audio_proc is not None:
             self.audio_proc.stdin.write('\n')

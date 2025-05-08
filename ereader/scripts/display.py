@@ -138,10 +138,8 @@ class Menu:
 
 
 class Display:
-    def __init__(self, font: ImageFont, button_height: int, line_space: int) -> None:
-        self.font = font
+    def __init__(self, button_height: int) -> None:
         self.button_height = button_height
-        self.line_space = line_space
         self.epd = epd4in26.EPD()
         self.epd.init()
         self.epd.Clear()
@@ -150,12 +148,9 @@ class Display:
         self.canvas = Image.new("1", (self.epd.width, self.epd.height))
 
     def paint_canvas(self) -> None:
-        """
-        Displays the canvas on the e-ink screen.
-        """
         self.epd.display_Partial(self.epd.getbuffer(self.canvas))
 
-    def draw_screen(self, image: Image, margins=(0, 0)):
+    def draw_screen(self, image: Image, margins=(0, 0)) -> None:
         self.canvas.paste(image, margins)
 
     def draw_button_labels(self, labels: list[str]) -> None:
@@ -163,6 +158,7 @@ class Display:
             return
         buttons = Image.new("1", (self.epd.width, self.button_height), color="white")
         draw = ImageDraw.Draw(buttons)
+        draw.font = ImageFont.load_default(20)
         button_width = self.epd.width / len(labels)
         for i, label in enumerate(labels):
             draw.rectangle((button_width * i, 0, button_width * (i + 1), buttons.height), outline=0)

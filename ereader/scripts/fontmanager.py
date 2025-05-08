@@ -131,7 +131,7 @@ class Fontmanager:
         """List all available fonts in the collection."""
         return list(self.font_collection.fonts.keys())
     
-    def list_available_sizes(self) -> list[float]:
+    def list_available_sizes(self) -> list[int]:
         """List all available font sizes"""
         return self.font_sizes
     
