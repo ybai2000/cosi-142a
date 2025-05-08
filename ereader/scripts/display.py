@@ -35,6 +35,7 @@ class Page:
         segments = []
         for sentence in sentences:
             segments.extend(self.sentence_segments[sentence])
+        print(segments)
         ascent, descent = self.font.getmetrics()
         box_height = ascent + descent
         highlighted_image = self.image.copy()

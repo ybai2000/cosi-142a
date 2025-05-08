@@ -1,6 +1,6 @@
 import time
 import os
-from PIL import ImageFont
+from PIL import ImageFont, Image, ImageDraw
 import json
 
 from display import Display, Menu
@@ -34,15 +34,24 @@ class App:
         while True:
             match self.menu(["Library", "Settings"], back=False):
                 case 0:
-                    doc_selection = self.menu(self.library + ["Add new document"])
-                    if doc_selection == len(self.library):
-                        self.capture_images(f'library/doc_{len(self.library)}')
-                    elif doc_selection is not None:
-                        self.read_document(doc_selection)
+                    self.library_menu()
                 case 1:
-                    self.settings()
+                    self.settings_menu()
 
-    def settings(self) -> None:
+    def library_menu(self) -> None:
+        while True:
+            doc_selection = self.menu(self.library + ["Add new document"])
+            if doc_selection is None:
+                return
+            if doc_selection == len(self.library):
+                self.capture_images(f'library/doc_{len(self.library)}')
+                self.library.append(f'Document {len(self.library)}')
+                with open('library/.metadata.json', 'w') as file:
+                    json.dump(self.library, file)
+            else:
+                self.read_document(doc_selection)
+
+    def settings_menu(self) -> None:
         while True:
             match self.menu(["Font", "Font Size"]):
                 case None:
@@ -87,6 +96,7 @@ class App:
                        self.line_space)
         page = doc.get_current_page()
         self.display.draw_screen(page.page_image())
+        self.display.draw_button_labels(["Prev", "Library", "TTS", "Next"])
         self.display.paint_canvas()
         while True:
             match self.button_listener.get_interrupt():
@@ -102,6 +112,8 @@ class App:
                         self.display.paint_canvas()
                 case Button.SELECT:
                     self.tts_doc(doc)
+                    self.display.draw_button_labels(["Prev", "Library", "TTS", "Next"])
+                    self.display.paint_canvas()
                 case Button.BACK:
                     self.tts_player.clean()
                     return
@@ -113,6 +125,7 @@ class App:
         self.tts_player.add_sentences(f'{doc.id}/{doc.current_page}', doc.get_current_page().sentences)
         if doc.get_next_page():
             self.tts_player.add_sentences(f'{doc.id}/{doc.current_page + 1}', doc.get_next_page().sentences)
+        self.display.draw_button_labels(["Volume Down", "", "Stop", "Volume Up"])
         while True:
             match self.button_listener.check_interrupt():
                 case Button.UP:
@@ -132,7 +145,6 @@ class App:
                 else:
                     doc.next_page()
                     tts_dir = f'{doc.id}/{doc.current_page}'
-                    self.tts_player.play_next(tts_dir)
                     self.tts_player.remove(f'{doc.id}/{doc.current_page - 1}')
                     if doc.get_next_page():
                         self.tts_player.add_sentences(f'{doc.id}/{doc.current_page + 1}', doc.get_next_page().sentences)
@@ -141,6 +153,13 @@ class App:
     def capture_images(self, directory: str) -> None:
         # TODO: if we want to be able to add to existing files, should count the number of things in the dir here
         camera = DocumentCamera(directory=directory)
+        self.display.draw_button_labels(["", "Finish", "Capture", "Retake"])
+        image = Image.new("1", (self.display.width, self.display.height - self.display.button_height), 255)
+        draw = ImageDraw.Draw(image)
+        draw.font = ImageFont.load_default(20)
+        draw.text((self.display.width / 2, (self.display.height - self.display.button_height) / 2), "Capturing Images", anchor="mm", fill="black")
+        self.display.draw_screen(image)
+        self.display.paint_canvas()
         while True:
             match self.button_listener.check_interrupt():
                 case Button.UP:
@@ -152,14 +171,19 @@ class App:
                     camera.capture_image()
                 case Button.BACK:
                     images = camera.done_capturing()
+                    self.display.draw_button_labels(["", "", "", ""])
+                    image = Image.new("1", (self.display.width, self.display.height - self.display.button_height), 255)
+                    draw = ImageDraw.Draw(image)
+                    draw.font = ImageFont.load_default(20)
+                    draw.text((self.display.width / 2, (self.display.height - self.display.button_height) / 2), "Running OCR (slowly)", anchor="mm", fill="black")
+                    self.display.draw_screen(image)
+                    self.display.paint_canvas()
                     text_lines = process_images(images)
+                    os.makedirs(directory, exist_ok=True)
                     with open(f"{directory}/text.txt", 'w') as file:
                         for line in text_lines:
-                            write(line)
+                            file.write(line + '\n')
                     break  # done capturing?
-
-        with open(os.path.join(directory, SENTENCE_FILE_NAME)) as file:
-            file.write(new_text)
 
 
 if __name__ == '__main__':

@@ -9,28 +9,25 @@ class DocumentCamera:
         #self.camera = Picamera2()
         #self.capture_config = self.camera.create_still_configuration()
         #self.camera.configure("preview")
+        self.camera = Picamera2()
+        self.camera.configure("preview")
+        self.camera.set_controls({"AfMode": controls.AfModeEnum.Continuous})
+        self.camera.start_preview(Preview.QTGL)
+        self.camera.start()
         self.directory = directory
         self.images = []
 
     def capture_image(self) -> str:
-        self.camera = Picamera2()
         self.capture_config = self.camera.create_still_configuration()
-        self.camera.configure("preview")
-        self.camera.start_preview(Preview.QTGL)
-        self.camera.start()
-        self.camera.set_controls({"AfMode": controls.AfModeEnum.Continuous})
-        time.sleep(2)
         array = self.camera.switch_mode_and_capture_array(self.capture_config, "main")
         img = Image.fromarray(array)
-        img.show()
-        self.camera.close()
         self.images.append(img)
+        img.show()
         
     def retake_image(self) -> str:
         if len(self.images) > 0:
             self.images = self.images[:-1]
         self.capture_image()
-        
         
     def done_capturing(self):
         self.camera.close()
